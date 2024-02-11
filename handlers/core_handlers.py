@@ -45,8 +45,7 @@ async def two_players(cb: CallbackQuery, state: FSMContext):
     await cb.message.edit_text(text=f'Игра началась! Сейчас ходит - {signs[sign]}', reply_markup=game_field)
 
 
-@router.callback_query(StateFilter(GameProgress.game_cycle))
-@router.callback_query(FilterCellsCBData())
+@router.callback_query(StateFilter(GameProgress.game_cycle), FilterCellsCBData())
 async def game_process(cb, state: FSMContext, coords: tuple[int]):
     x, y = coords
     data = await state.get_data()
@@ -81,6 +80,8 @@ async def game_process(cb, state: FSMContext, coords: tuple[int]):
     else:
         await cb.answer('Нельзя пойти на эту клетку!')
 
+
 @router.callback_query(F.data == 'Вернуться')
 async def ending(cb: CallbackQuery, state: FSMContext):
     await cb.message.edit_text(text=lexicon.start, reply_markup=start_keyboard)
+    await state.set_state(default_state)

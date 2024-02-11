@@ -10,5 +10,3 @@ storage = RedisStorage(redis=redis)
 class GameProgress(StatesGroup):
     game_cycle = State()
     game_end = State()
-
-
