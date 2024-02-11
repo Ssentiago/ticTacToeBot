@@ -10,3 +10,4 @@ mode_selection_keyboard = InlineKeyboardMarkup(
                      [InlineKeyboardButton(text='Один игрок: другой игрок', callback_data='Один игрок: другой игрок')],
                      [InlineKeyboardButton(text='Два игрока', callback_data='Два игрока')]])
 rules_keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='Назад', callback_data='Назад')]])
+ending_keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='Вернуться', callback_data='Вернуться')]])

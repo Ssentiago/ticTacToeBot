@@ -17,11 +17,12 @@ def check_winner(cb: CallbackQuery, winner=None):
     # вспомогательная строчка с значениями главной диагонали
     main_d = not winner and ''.join([check_kb[i][i] for i in range(3)])
     # вспомогательная строчка с значениями побочной диагонали
-    side_d = not winner and ''.join([check_kb[i][i] for i in range(2, -1, -1)])
-
+    side_d = not winner and ''.join([check_kb[2 - i][i] for i in range(2, -1, -1)])
+    print(check_kb)
+    print(side_d)
     # проверяем диагонали.
-    winner = not winner and (main_d == (win := 'X') * 3 or main_d == (win := 'O') * 3
-                                           or side_d == (win := 'X') * 3 or side_d == (win := 'O') * 3) and win or winner
+    winner = not winner and (main_d == (win := '✕') * 3 or main_d == (win := 'O') * 3
+                                           or side_d == (win := '✕') * 3 or side_d == (win := 'O') * 3) and win or winner
     # проверка на ничью
     winner = not winner and all(x != '◻️' for row in check_kb for x in row) and 'Ничья' or winner
 
