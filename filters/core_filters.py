@@ -8,3 +8,8 @@ class FilterCellsCBData(BaseFilter):
         if obj.__class__ == tuple:
             return {'coords': obj}
         return False
+
+
+class FilterAPairs(BaseFilter):
+    async def __call__(self, cb: CallbackQuery):
+       ...
