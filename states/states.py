@@ -8,5 +8,7 @@ storage = RedisStorage(redis=redis)
 
 
 class GameProgress(StatesGroup):
+    default = default_state
     game_cycle = State()
     game_end = State()
+    multiplayer = State()
