@@ -2,7 +2,7 @@ import pprint
 
 from aiogram.filters import CommandStart, Command
 from aiogram import F
-from states.states import GameProgress, StateFilter, FSMContext
+from states.states import Game, StateFilter, FSMContext
 from aiogram import Router
 from aiogram.types import Message, CallbackQuery
 from lexicon.lexicon import lexicon
@@ -15,9 +15,9 @@ game_pool = {'pool': {}, 'pairs': set()}
 router = Router()
 
 
-@router.message(~StateFilter(GameProgress.game_cycle), ~StateFilter(GameProgress.online), CommandStart())
+@router.message(~StateFilter(Game.two_players_on_one_computer), ~StateFilter(Game.player_vs_player), CommandStart())
 async def start_message(message: Message, state: FSMContext):
-    await state.set_state(GameProgress.default)
+    await state.set_state(Game.default)
     keyboard = TTTKeyboard.create_simple_inline_keyboard(2, 'Начать', 'Правила')
     await message.answer(lexicon.start, reply_markup=keyboard)
 
@@ -42,7 +42,7 @@ async def begin(cb: CallbackQuery):
 
 @router.callback_query(F.data == 'Два игрока')
 async def two_players(cb: CallbackQuery, state: FSMContext):
-    await state.set_state(GameProgress.game_cycle)
+    await state.set_state(Game.two_players_on_one_computer)
 
     sign = '✕'
 
@@ -50,7 +50,7 @@ async def two_players(cb: CallbackQuery, state: FSMContext):
     await cb.message.edit_text(text=f'Игра началась! Сейчас ходит - {signs[sign]}', reply_markup=TTTKeyboard.create_game_field(3))
 
 
-@router.callback_query(StateFilter(GameProgress.game_cycle, GameProgress.online), FilterCellsCBData())
+@router.callback_query(StateFilter(Game.two_players_on_one_computer, Game.player_vs_player), FilterCellsCBData())
 async def game_process(cb: CallbackQuery, state: FSMContext, coords: tuple[int, int]):
     x, y = coords
     if cb.message.reply_markup.inline_keyboard[x][y].text == '◻️':
@@ -70,11 +70,13 @@ async def game_process(cb: CallbackQuery, state: FSMContext, coords: tuple[int, 
         if winner is not None:
             if winner in '✕O':
                 winner = winner == '✕' and 'Крестик' or 'Нолик'
+
             keyboard = TTTKeyboard.create_simple_inline_keyboard(1, 'Вернуться')
             await cb.message.edit_text(text=f'Игра закончена! {(winner != "Ничья") * "Победил "}{winner}!',
                                        reply_markup=keyboard)
+
             await state.update_data({"winner": None})
-            await state.set_state(GameProgress.game_end)
+            await state.set_state(Game.end_of_game)
 
 
 
@@ -88,12 +90,12 @@ async def game_process(cb: CallbackQuery, state: FSMContext, coords: tuple[int, 
 async def ending(cb: CallbackQuery, state: FSMContext):
     keyboard = TTTKeyboard.create_simple_inline_keyboard(2, 'Начать', 'Правила')
     await cb.message.edit_text(text=lexicon.start, reply_markup=keyboard)
-    await state.set_state(GameProgress.default)
+    await state.set_state(Game.default)
 
 
-@router.message(StateFilter(GameProgress.game_cycle, GameProgress.online), Command('cancel'))
+@router.message(StateFilter(Game.two_players_on_one_computer, Game.player_vs_player), Command('cancel'))
 async def cancel(cb: Message, state: FSMContext):
-    await state.set_state(GameProgress.default)
+    await state.set_state(Game.default)
     keyboard = TTTKeyboard.create_simple_inline_keyboard(2, 'Начать', 'Правила')
     await cb.bot.send_message(cb.from_user.id, lexicon.cancel)
     await cb.bot.send_message(cb.from_user.id, lexicon.start, reply_markup=keyboard)
@@ -101,7 +103,7 @@ async def cancel(cb: Message, state: FSMContext):
 
 @router.callback_query(F.data == 'Один игрок: другой игрок')
 async def search_for_players(cb: CallbackQuery, state: FSMContext):
-    await state.set_state(GameProgress.online)
+    await state.set_state(Game.player_vs_player)
     await cb.message.edit_text('Идёт поиск игроков...')
     user_id = cb.from_user.id
     if game_pool['pool']:
@@ -118,8 +120,8 @@ async def send_keyboard_both(id1: int, id2: int, state1: FSMContext, state2: FSM
     sign1 = signs.pop()
     sign2 = signs.pop()
 
-    msg1 = await bot.send_message(id1, lexicon.mult_user(sign1), reply_markup=keyboard)
-    msg2 = await bot.send_message(id2, lexicon.mult_user(sign2), reply_markup=keyboard)
+    msg1 = await bot.send_message(id1, lexicon.online(sign1), reply_markup=keyboard)
+    msg2 = await bot.send_message(id2, lexicon.online(sign2), reply_markup=keyboard)
 
     await state1.update_data({'sign': sign1, 'msg_id': msg1.message_id, 'playing_now': '✕'})
     await state2.update_data({'sign': sign2, 'msg_id': msg2.message_id, 'playing_now': '✕'})

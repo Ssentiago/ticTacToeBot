@@ -7,9 +7,10 @@ redis = Redis(host='localhost')
 storage = RedisStorage(redis=redis)
 
 
-class GameProgress(StatesGroup):
+# все возможные состояния пользователей
+class Game(StatesGroup):
     default = default_state
-    game_cycle = State()
-    game_end = State()
-    computer = State()
-    online = State()
+    two_players_on_one_computer = State()
+    player_vs_computer = State()
+    player_vs_player = State()
+    end_of_game = State()
