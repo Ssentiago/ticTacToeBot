@@ -10,6 +10,3 @@ class FilterCellsCBData(BaseFilter):
         return False
 
 
-class FilterAPairs(BaseFilter):
-    async def __call__(self, cb: CallbackQuery):
-       ...
