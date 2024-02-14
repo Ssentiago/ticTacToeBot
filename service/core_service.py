@@ -1,7 +1,7 @@
 from aiogram.types import CallbackQuery
 from handlers.core_handlers import FSMContext, TTTKeyboard
 from handlers.core_handlers import lexicon
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 def check_winner(cb: CallbackQuery, winner=None):
@@ -17,14 +17,10 @@ def check_winner(cb: CallbackQuery, winner=None):
               any(row == [(win := '✕')] * 3 or row == [(win := 'O')] * 3 for row in (list(row) for row in zip(*check_kb)))
               and win or winner)
 
-    # вспомогательная строчка с значениями главной диагонали
-    main_d = not winner and ''.join([check_kb[i][i] for i in range(3)])
-    # вспомогательная строчка с значениями побочной диагонали
-    side_d = not winner and ''.join([check_kb[2 - i][i] for i in range(2, -1, -1)])
+    winner = (any([all(check_kb[i][i] == '✕' for i in range(3)), all(check_kb[2 - i][i] == '✕' for i in range(2, -1, -1))]) and '✕'
+              or any([all(check_kb[i][i] == 'O' for i in range(3)),
+                      all(check_kb[2 - i][i] == 'O' for i in range(2, -1, -1))]) and 'O') or winner
 
-    # проверяем диагонали.
-    winner = not winner and (main_d == (win := '✕') * 3 or main_d == (win := 'O') * 3
-                             or side_d == (win := '✕') * 3 or side_d == (win := 'O') * 3) and win or winner
     # проверка на ничью
     winner = not winner and all(x != '◻️' for row in check_kb for x in row) and 'Ничья' or winner
 
@@ -60,4 +56,10 @@ async def get_other_user_data(pair: tuple[int, FSMContext, int, FSMContext], use
     return other_user_id, other_user_state, other_user_data
 
 
+async def computer(sign: str,
+                   keyboard: InlineKeyboardMarkup):
+    print(keyboard)
+    '◻️'
+    current_situation = [[elem.text for elem in row] for row in keyboard.inline_keyboard]
+    print(current_situation)
 

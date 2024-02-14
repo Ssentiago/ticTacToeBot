@@ -3,7 +3,7 @@ from states.states import Game, FSMContext
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 from handlers.core_handlers import Service
-from service.core_service import get_other_user_data
+from service.core_service import get_other_user_data, computer
 from service.other_service import get_the_pair
 from aiogram.types import CallbackQuery
 from lexicon.lexicon import lexicon
@@ -54,8 +54,8 @@ class SomeMiddleWare(BaseMiddleware):
                                                           other_user_data['msg_id'],
                                                           reply_markup=keyboard)
                         return
-
-                        # обновляем информацию о знаке, который сейчас ходит
+                    # print(await computer('',result))
+                    # обновляем информацию о знаке, который сейчас ходит
                     # а также вытаскиваем данные другого пользователя
                     other_user_id, other_user_state, other_user_data = await get_other_user_data(pair, user_id)
                     await user_state.update_data({'playing_now': next_sign})

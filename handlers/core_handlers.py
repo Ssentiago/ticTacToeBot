@@ -1,21 +1,18 @@
-import pprint
-
 from aiogram.filters import CommandStart, Command
-from aiogram import F
+from aiogram import F, Router
 from states.states import Game, StateFilter, FSMContext
-from aiogram import Router
 from aiogram.types import Message, CallbackQuery
 from lexicon.lexicon import lexicon
 from keyboards.inline_keyboard import TTTKeyboard
 from filters.core_filters import FilterCellsCBData
-from service.core_service import check_winner
-from service.core_service import initiate_both_users, Service
+from service.core_service import check_winner, initiate_both_users, Service
 
 router = Router()
 
 
 @router.message(~StateFilter(Game.two_players_on_one_computer), ~StateFilter(Game.player_vs_player), CommandStart())
-async def start_message(message: Message, state: FSMContext):
+async def start_message(message: Message,
+                        state: FSMContext):
     await state.set_state(Game.default)
     keyboard = TTTKeyboard.create_simple_inline_keyboard(2, 'Начать', 'Правила')
     await message.answer(lexicon.start, reply_markup=keyboard)
@@ -40,7 +37,8 @@ async def begin(cb: CallbackQuery):
 
 
 @router.callback_query(F.data == 'Два игрока')
-async def two_players(cb: CallbackQuery, state: FSMContext):
+async def two_players(cb: CallbackQuery,
+                      state: FSMContext):
     await state.set_state(Game.two_players_on_one_computer)
 
     sign = '✕'
@@ -50,7 +48,9 @@ async def two_players(cb: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(StateFilter(Game.two_players_on_one_computer, Game.player_vs_player), FilterCellsCBData())
-async def game_process(cb: CallbackQuery, state: FSMContext, coords: tuple[int, int]):
+async def game_process(cb: CallbackQuery,
+                       state: FSMContext,
+                       coords: tuple[int, int]):
     x, y = coords
     if cb.message.reply_markup.inline_keyboard[x][y].text == '◻️':
         data = await state.get_data()
@@ -59,9 +59,8 @@ async def game_process(cb: CallbackQuery, state: FSMContext, coords: tuple[int, 
 
         next_sign = data['sign'] == 'O' and '✕' or 'O'
 
-        await cb.message.edit_text(
-            text=lexicon.game_process(Service.signs[data['sign']], Service.signs[next_sign]),
-            reply_markup=cb.message.reply_markup)
+        await cb.message.edit_text(text=lexicon.game_process(Service.signs[data['sign']], Service.signs[next_sign]),
+                                   reply_markup=cb.message.reply_markup)
 
         if raw_state == Game.two_players_on_one_computer.state:
             await state.update_data({'sign': next_sign})
@@ -90,14 +89,16 @@ async def game_process(cb: CallbackQuery, state: FSMContext, coords: tuple[int, 
 
 
 @router.callback_query(F.data == 'Вернуться')
-async def ending(cb: CallbackQuery, state: FSMContext):
+async def ending(cb: CallbackQuery,
+                 state: FSMContext):
     keyboard = TTTKeyboard.create_simple_inline_keyboard(2, 'Начать', 'Правила')
     await cb.message.edit_text(text=lexicon.start, reply_markup=keyboard)
     await state.set_state(Game.default)
 
 
 @router.message(StateFilter(Game.two_players_on_one_computer, Game.player_vs_player), Command('cancel'))
-async def cancel(cb: Message, state: FSMContext):
+async def cancel(cb: Message,
+                 state: FSMContext):
     await state.set_state(Game.default)
     keyboard = TTTKeyboard.create_simple_inline_keyboard(2, 'Начать', 'Правила')
     await cb.bot.send_message(cb.from_user.id, lexicon.cancel)
@@ -105,7 +106,8 @@ async def cancel(cb: Message, state: FSMContext):
 
 
 @router.callback_query(F.data == 'Один игрок: другой игрок')
-async def search_for_players(cb: CallbackQuery, state: FSMContext):
+async def search_for_players(cb: CallbackQuery,
+                             state: FSMContext):
     await state.set_state(Game.player_vs_player)
     await cb.message.edit_text('Идёт поиск игроков...')
     user_id = cb.from_user.id
