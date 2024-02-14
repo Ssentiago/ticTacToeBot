@@ -2,7 +2,8 @@ from typing import Awaitable, Callable, Dict, Any
 from states.states import Game, FSMContext
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
-from handlers.core_handlers import game_pool
+from handlers.core_handlers import Service
+from service.core_service import get_other_user_data
 from service.other_service import get_the_pair
 from aiogram.types import CallbackQuery
 from lexicon.lexicon import lexicon
@@ -30,10 +31,10 @@ class SomeMiddleWare(BaseMiddleware):
             if state == Game.two_players_on_one_computer.state:
                 return await handler(event, data)
 
-            # проверяем, что пользователь находится в состоянии противоборства с другим пользователемы
+            # проверяем, что пользователь находится в состоянии противоборства с другим пользователем
             if state == Game.player_vs_player.state:
                 # достаем id и состояния пользователей из пула
-                pair: tuple[int, FSMContext, int, FSMContext] = await get_the_pair(game_pool, user_id)
+                pair: tuple[int, FSMContext, int, FSMContext] = await get_the_pair(Service.game_pool, user_id)
 
                 # достаем знак пользователя и сразу же подготавливаем следующий знак
                 user_sign: str = user_data['sign']
@@ -41,27 +42,35 @@ class SomeMiddleWare(BaseMiddleware):
 
                 # если пользователь имеет право сейчас ходить, то обрабатываем его ход, если нет - шлём об этом уведомление
                 if user_sign == user_data['playing_now']:
-                    # достаем клавиатуру из хэндлера, обрабатывающего процесс игры
-                    keyboard = await handler(event, data)
+                    # достаем клавиатуру и текст из хэндлера, обрабатывающего процесс игры
+                    result = await handler(event, data)
 
-                    # обновляем информацию о знаке, который сейчас ходит
+                    if isinstance(result, tuple):
+                        text, keyboard = result
+                        other_user_id, other_user_state, other_user_data = await get_other_user_data(pair, user_id)
+                        await other_user_state.set_state(Game.end_of_game)
+                        await event.bot.edit_message_text(text,
+                                                          other_user_id,
+                                                          other_user_data['msg_id'],
+                                                          reply_markup=keyboard)
+                        return
+
+                        # обновляем информацию о знаке, который сейчас ходит
+                    # а также вытаскиваем данные другого пользователя
+                    other_user_id, other_user_state, other_user_data = await get_other_user_data(pair, user_id)
                     await user_state.update_data({'playing_now': next_sign})
-
-                    # достаем из пар состояние другого игрока
-                    other_user_ind = pair.index(user_id) == 0 and 2 or 0
-                    other_user_data: FSMContext = pair[other_user_ind + 1]
-                    other_user_data = await other_user_data.get_data()
+                    await other_user_state.update_data({'playing_now': next_sign})
 
                     # обновляем клавиатуру и сообщение у другого игрока
                     # id мы достали из пары, id сообщения - из состояния игрока, а клавиатуру вытащили из хэндлера
-                    await event.bot.edit_message_text(lexicon.game_process(user_sign, next_sign),
-                                                      pair[other_user_ind],
-                                                      other_user_data['msg_id'], reply_markup=keyboard)
+                    await event.bot.edit_message_text(lexicon.game_process(Service.signs[user_sign], Service.signs[next_sign]),
+                                                      other_user_id,
+                                                      other_user_data['msg_id'], reply_markup=result)
 
 
 
-            else:
-                await event.answer('Сейчас не ваш ход!')
+                else:
+                    await event.answer('Сейчас не ваш ход!')
 
         else:
             return await handler(event, data)
