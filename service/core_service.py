@@ -55,11 +55,17 @@ async def get_other_user_data(pair: tuple[int, FSMContext, int, FSMContext], use
 
     return other_user_id, other_user_state, other_user_data
 
+def get_sign(user_event: CallbackQuery,
+             state)
 
-async def computer(sign: str,
-                   keyboard: InlineKeyboardMarkup):
-    print(keyboard)
-    '◻️'
-    current_situation = [[elem.text for elem in row] for row in keyboard.inline_keyboard]
-    print(current_situation)
+def update_field_and_users_data(sign: str,
+                                field: InlineKeyboardMarkup,
+                                ):
 
+# async def computer(sign: str,
+#                    keyboard: InlineKeyboardMarkup):
+#     print(keyboard)
+#     '◻️'
+#     current_situation = [[elem.text for elem in row] for row in keyboard.inline_keyboard]
+#     print(current_situation)
+#

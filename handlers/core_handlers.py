@@ -5,7 +5,7 @@ from aiogram.types import Message, CallbackQuery
 from lexicon.lexicon import lexicon
 from keyboards.inline_keyboard import TTTKeyboard
 from filters.core_filters import FilterCellsCBData
-from service.core_service import check_winner, initiate_both_users, Service
+from service.core_service import check_winner, initiate_both_users, Service, update_field_and_users_data
 
 router = Router()
 
@@ -53,6 +53,7 @@ async def game_process(cb: CallbackQuery,
                        coords: tuple[int, int]):
     x, y = coords
     if cb.message.reply_markup.inline_keyboard[x][y].text == '◻️':
+        update_field_and_users_data(cb.message.reply_markup, )
         data = await state.get_data()
         raw_state = await state.get_state()
         cb.message.reply_markup.inline_keyboard[x][y].text = data['sign']
