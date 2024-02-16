@@ -26,10 +26,10 @@ async def check_winner(cb: CallbackQuery, winner=None):
     return winner
 
 
-
-
-
-async def initiate_both_users(id1: int, id2: int, state1: FSMContext, state2: FSMContext, bot):
+async def initiate_both_users(id1: int,
+                              id2: int,
+                              state1: FSMContext,
+                              state2: FSMContext, bot):
     signs = {'✕', 'O'}
     keyboard = TTTKeyboard.create_game_field(3)
     sign1 = signs.pop()
@@ -94,10 +94,10 @@ async def update_field_and_users_data(sign: str,
 
 
 async def ending_update(user_cb: CallbackQuery,
-                 user_id: int,
-                 user_state: FSMContext,
-                 text: str,
-                 keyboard: InlineKeyboardMarkup):
+                        user_id: int,
+                        user_state: FSMContext,
+                        text: str,
+                        keyboard: InlineKeyboardMarkup):
     raw_state = await user_state.get_state()
     await user_cb.message.edit_text(text=text,
                                     reply_markup=keyboard)
