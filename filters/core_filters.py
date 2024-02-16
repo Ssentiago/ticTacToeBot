@@ -1,12 +1,7 @@
-from aiogram.filters import BaseFilter
-from aiogram.types import CallbackQuery
+from aiogram.filters.callback_data import CallbackData
 
 
-class FilterCellsCBData(BaseFilter):
-    async def __call__(self, cb: CallbackQuery):
-        obj = eval(cb.data)
-        if obj.__class__ == tuple:
-            return {'coords': obj}
-        return False
-
+class CellsCallbackFactory(CallbackData, prefix=''):
+    x: int
+    y: int
 

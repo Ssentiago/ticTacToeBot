@@ -2,29 +2,31 @@ from aiogram.types import CallbackQuery
 from handlers.core_handlers import FSMContext, TTTKeyboard
 from handlers.core_handlers import lexicon
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from handlers.core_handlers import Game
+from lexicon.lexicon import lexicon
 
 
-def check_winner(cb: CallbackQuery, winner=None):
-    check_kb = cb.message.reply_markup.inline_keyboard
-    check_kb = [list(map(lambda x: x.text, row)) for row in check_kb]
+async def get_lines(cb: CallbackQuery):
+    kb = [list(map(lambda x: x.text, row)) for row in cb.message.reply_markup.inline_keyboard]
+    hor = [x for x in kb]
+    vert = [x for x in [list(i) for i in zip(*kb)]]
+    diag = [[kb[i][i] for i in range(3)], [kb[2 - i][i] for i in range(2, -1, -1)]]
+    res = []
+    res.extend(hor)
+    res.extend(vert)
+    res.extend(diag)
+    return res
 
-    # проверка строчек.
-    winner = (not winner and
-              any(row == [(win := '✕')] * 3 or row == [(win := 'O')] * 3 for row in check_kb)
-              and win or winner)
-    # проверка столбцов
-    winner = (not winner and
-              any(row == [(win := '✕')] * 3 or row == [(win := 'O')] * 3 for row in (list(row) for row in zip(*check_kb)))
-              and win or winner)
 
-    winner = (any([all(check_kb[i][i] == '✕' for i in range(3)), all(check_kb[2 - i][i] == '✕' for i in range(2, -1, -1))]) and '✕'
-              or any([all(check_kb[i][i] == 'O' for i in range(3)),
-                      all(check_kb[2 - i][i] == 'O' for i in range(2, -1, -1))]) and 'O') or winner
-
-    # проверка на ничью
-    winner = not winner and all(x != '◻️' for row in check_kb for x in row) and 'Ничья' or winner
-
+async def check_winner(cb: CallbackQuery, winner=None):
+    lines = await get_lines(cb)
+    winner = winner is None and any(x.count('✕') == 3 for x in lines) and '✕' or winner
+    winner = winner is None and any(x.count('O') == 3 for x in lines) and 'O' or winner
+    winner = winner is None and all(x.count('◻️') == 0 for x in lines) and 'Ничья' or winner
     return winner
+
+
+
 
 
 async def initiate_both_users(id1: int, id2: int, state1: FSMContext, state2: FSMContext, bot):
@@ -47,25 +49,65 @@ class Service:
     game_pool = {'pool': {}, 'pairs': set()}
 
 
-async def get_other_user_data(pair: tuple[int, FSMContext, int, FSMContext], user_id) -> tuple[int, FSMContext, dict]:
+async def get_other_user_data(pair: tuple[int, FSMContext, int, FSMContext], user_id) -> tuple[int, int, FSMContext]:
     other_user_ind = pair.index(user_id) == 0 and 2 or 0
     other_user_id = pair[other_user_ind]
     other_user_state: FSMContext = pair[other_user_ind + 1]
     other_user_data = await other_user_state.get_data()
+    msg_id = other_user_data['msg_id']
+    return other_user_id, msg_id, other_user_state
 
-    return other_user_id, other_user_state, other_user_data
 
-def get_sign(user_event: CallbackQuery,
-             state)
+async def get_the_pair(pool: dict, id: int):
+    for pair in pool['pairs']:
+        if id in pair:
+            return pair
 
-def update_field_and_users_data(sign: str,
-                                field: InlineKeyboardMarkup,
-                                ):
 
-# async def computer(sign: str,
-#                    keyboard: InlineKeyboardMarkup):
-#     print(keyboard)
-#     '◻️'
-#     current_situation = [[elem.text for elem in row] for row in keyboard.inline_keyboard]
-#     print(current_situation)
-#
+async def update_field_and_users_data(sign: str,
+                                      x: int,
+                                      y: int,
+                                      field: InlineKeyboardMarkup,
+                                      user_cb: CallbackQuery,
+                                      user_state: FSMContext,
+                                      user_id: int,
+                                      ):
+    raw_user_state = await user_state.get_state()
+    next_sign = sign == '✕' and 'O' or '✕'
+    field.inline_keyboard[x][y].text = sign
+    text = lexicon.game_process(Service.signs[sign], Service.signs[next_sign])
+    await user_cb.message.edit_text(text=text,
+                                    reply_markup=field)
+
+    if raw_user_state == Game.two_players_on_one_computer:
+        await user_state.update_data(sign=next_sign)
+
+    if raw_user_state == Game.player_vs_player.state:
+        pair = await get_the_pair(Service.game_pool, user_id)
+        other_user_id, msg_id, other_user_state = await get_other_user_data(pair, user_id)
+        await user_cb.bot.edit_message_text(text=text,
+                                            chat_id=other_user_id,
+                                            message_id=msg_id,
+                                            reply_markup=field)
+        await user_state.update_data(playing_now=next_sign)
+        await other_user_state.update_data(playing_now=next_sign)
+
+
+async def ending_update(user_cb: CallbackQuery,
+                 user_id: int,
+                 user_state: FSMContext,
+                 text: str,
+                 keyboard: InlineKeyboardMarkup):
+    raw_state = await user_state.get_state()
+    await user_cb.message.edit_text(text=text,
+                                    reply_markup=keyboard)
+    await user_state.set_state(Game.end_of_game)
+
+    if raw_state == Game.player_vs_player.state:
+        pair = await get_the_pair(Service.game_pool, user_id)
+        other_user_id, msg_id, other_user_state = await get_other_user_data(pair, user_id)
+        await user_cb.bot.edit_message_text(text=text,
+                                            chat_id=other_user_id,
+                                            message_id=msg_id,
+                                            reply_markup=keyboard)
+        await other_user_state.set_state(Game.end_of_game)

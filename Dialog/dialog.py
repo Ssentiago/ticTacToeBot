@@ -1,0 +1,3 @@
+import aiogram_dialog
+
+

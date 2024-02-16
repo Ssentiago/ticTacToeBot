@@ -7,12 +7,14 @@ from handlers import core_handlers, other_handlers
 from states.states import storage
 from logs import log_config
 from middlewares.core_middlewares import SomeMiddleWare
+from menu.menu import set_menu
 
 
 async def main():
     config: Config = load_config()
     bot = Bot(config.tg_bot.token)
     dp = Dispatcher(storage=storage)
+    dp.startup.register(set_menu)
     dp.include_router(core_handlers.router)
     dp.include_router(other_handlers.router)
     core_handlers.router.callback_query.middleware(SomeMiddleWare())
