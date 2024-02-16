@@ -22,4 +22,4 @@ class lexicon:
 "Два игрока" - сыграйте вместе с другим человеком на одном компьютере!'''
     game_process = lambda sign, next_sign: f'{sign} сделал свой ход! Теперь ходит {next_sign}!'
     cancel = '''Игра была отменена! Жаль!..'''
-    online = lambda sign: f'Игра началась! Вы - {sign}! Ходит Крестик!'
+    game_start = lambda sign: f'Игра началась! Вы - {sign}! Ходит Крестик!'

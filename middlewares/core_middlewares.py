@@ -2,13 +2,10 @@ from typing import Awaitable, Callable, Dict, Any
 from states.states import Game, FSMContext
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
-from handlers.core_handlers import Service
-from service.core_service import get_other_user_data, get_the_pair
 from aiogram.types import CallbackQuery
-from lexicon.lexicon import lexicon
 
 
-class SomeMiddleWare(BaseMiddleware):
+class CheckingMoves(BaseMiddleware):
     async def __call__(self,
                        handler: Callable[TelegramObject: Dict[str, Any], Awaitable[Any]],
                        event: CallbackQuery,
