@@ -15,6 +15,7 @@ class Game(StatesGroup):
     end = State()
 
 
+
 # class Game(StatesGroup):
 #     two_players_on_one_computer = State()
 #     player_vs_computer = State()

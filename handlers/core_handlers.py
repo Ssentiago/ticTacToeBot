@@ -11,6 +11,7 @@ from states.states import Game, StateFilter, FSMContext
 from aiogram.types import Message, CallbackQuery
 from lexicon.lexicon import lexicon
 from keyboards.inline_keyboard import TTTKeyboard
+
 from filters.core_filters import CellsCallbackFactory, CallbackData
 from service.core_service import check_winner, initiate_both_users, Service, update_field_and_users_data, ending_update, computer_move
 
@@ -21,20 +22,12 @@ router = Router()
 async def start(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(Game.start, mode=StartMode.RESET_STACK)
 
-async def on_click(cb: CallbackQuery, button: Button, manager: DialogManager):
-    x, y = map(int, cb.data.split('_'))
 
 
 
-# @router.message(StateFilter(Game.two_players_on_one_computer, Game.player_vs_player, Game.player_vs_computer), Command('cancel'))
-# async def cancel(cb: Message,
-#                  state: FSMContext):
-#     await state.set_state(Game.default)
-#     keyboard = TTTKeyboard.create_simple_inline_keyboard(2, 'Начать', 'Правила')
-#     await cb.bot.send_message(cb.from_user.id, lexicon.cancel)
-#     await cb.bot.send_message(cb.from_user.id, lexicon.start, reply_markup=keyboard)
-#
-#
+
+
+
 # @router.callback_query(F.data == 'Один игрок: другой игрок')
 # async def search_for_players(cb: CallbackQuery,
 #                              state: FSMContext):

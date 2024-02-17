@@ -2,19 +2,14 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.kbd import Button
-from aiogram_dialog.widgets.text import Const
-
+from aiogram_dialog.widgets.text import Case, Const, Format
 
 
 class TTTKeyboard:
     @staticmethod
     def create_game_field(size: int, on_click):
-        game_field = [Button(Const('◻️'), id=f"{row}_{col}", on_click=on_click) for row in range(3) for col in range(3)]
+        game_field = [Button(Format({'sign'} or '◻️'), id = f"{row}_{col}", on_click = on_click) for row in range(3) for col in range(3)]
         return game_field
-
-
-
-
 
         # game_field = InlineKeyboardMarkup(inline_keyboard=
         #                                   [[InlineKeyboardButton(text='◻️', callback_data=CellsCallbackFactory(x=row,
