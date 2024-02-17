@@ -1,4 +1,5 @@
 import asyncio
+import random
 
 from aiogram.filters import CommandStart, Command
 from aiogram import F, Router
@@ -17,25 +18,25 @@ async def start_message(message: Message,
                         state: FSMContext):
     await state.set_state(Game.default)
     keyboard = TTTKeyboard.create_simple_inline_keyboard(2, 'Начать', 'Правила')
-    await message.answer(lexicon.start, reply_markup=keyboard)
+    await message.answer(lexicon.start, reply_markup = keyboard)
 
 
 @router.callback_query(F.data == 'Правила')
 async def rules(callback: CallbackQuery):
     keyboard = TTTKeyboard.create_simple_inline_keyboard(1, 'Назад')
-    await callback.message.edit_text(text=lexicon.rules, reply_markup=keyboard)
+    await callback.message.edit_text(text = lexicon.rules, reply_markup = keyboard)
 
 
 @router.callback_query(F.data == 'Назад')
 async def back(callback: CallbackQuery):
     keyboard = TTTKeyboard.create_simple_inline_keyboard(2, 'Начать', 'Правила')
-    await callback.message.edit_text(text=lexicon.start, reply_markup=keyboard)
+    await callback.message.edit_text(text = lexicon.start, reply_markup = keyboard)
 
 
 @router.callback_query(F.data == 'Начать')
 async def begin(cb: CallbackQuery):
     keyboard = TTTKeyboard.create_simple_inline_keyboard(1, 'Один игрок: компьютер', 'Один игрок: другой игрок', 'Два игрока')
-    await cb.message.edit_text(text=lexicon.mode, reply_markup=keyboard)
+    await cb.message.edit_text(text = lexicon.mode, reply_markup = keyboard)
 
 
 @router.callback_query(F.data == 'Два игрока')
@@ -47,15 +48,15 @@ async def two_players(cb: CallbackQuery,
 
     await state.set_data({'winner': None, 'sign': sign})
 
-    await cb.message.edit_text(text=f'Игра началась! Сейчас ходит - {Service.signs[sign]}',
-                               reply_markup=TTTKeyboard.create_game_field(3))
+    await cb.message.edit_text(text = f'Игра началась! Сейчас ходит - {Service.signs[sign]}',
+                               reply_markup = TTTKeyboard.create_game_field(3))
 
 
 @router.callback_query(F.data == 'Вернуться')
 async def ending(cb: CallbackQuery,
                  state: FSMContext):
     keyboard = TTTKeyboard.create_simple_inline_keyboard(2, 'Начать', 'Правила')
-    await cb.message.edit_text(text=lexicon.start, reply_markup=keyboard)
+    await cb.message.edit_text(text = lexicon.start, reply_markup = keyboard)
     await state.set_state(Game.default)
 
 
@@ -65,7 +66,7 @@ async def cancel(cb: Message,
     await state.set_state(Game.default)
     keyboard = TTTKeyboard.create_simple_inline_keyboard(2, 'Начать', 'Правила')
     await cb.bot.send_message(cb.from_user.id, lexicon.cancel)
-    await cb.bot.send_message(cb.from_user.id, lexicon.start, reply_markup=keyboard)
+    await cb.bot.send_message(cb.from_user.id, lexicon.start, reply_markup = keyboard)
 
 
 @router.callback_query(F.data == 'Один игрок: другой игрок')
@@ -90,24 +91,25 @@ async def computer(cb: CallbackQuery,
     comp_sign = '✕'
     user_sign = 'O'
     await state.set_state(Game.player_vs_computer)
-    await state.update_data(sign=user_sign, computer_sign=comp_sign, playing_now='✕')
+    await state.update_data(sign = user_sign, computer_sign = comp_sign, playing_now = '✕')
     keyboard = TTTKeyboard.create_game_field(3)
     if comp_sign == '✕':
-        await cb.message.edit_text(text=lexicon.game_start(user_sign),
-                                   reply_markup=keyboard)
-        comp_move = await computer_move(keyboard, state)
+        await cb.message.edit_text(text = lexicon.game_start(Service.signs[user_sign]),
+                                   reply_markup = keyboard)
+        comp_move = random.randint(0, 2), random.randint(0, 2)
         x, y = comp_move
         keyboard.inline_keyboard[x][y].text = comp_sign
-        await asyncio.sleep(3)
-        await cb.message.edit_text(text=lexicon.game_process(Service.signs[comp_sign], Service.signs[user_sign]),
-                                   reply_markup=keyboard)
+        await asyncio.sleep(random.randint(1, 3))
+        await cb.message.edit_text(text = lexicon.game_process(Service.signs[comp_sign], Service.signs[user_sign]),
+                                   reply_markup = keyboard)
     else:
-        await cb.message.edit_text(text=lexicon.game_start(Service.signs[user_sign]),
-                                   reply_markup=keyboard)
-    await state.update_data(playing_now='O')
+        await cb.message.edit_text(text = lexicon.game_start(Service.signs[user_sign]),
+                                   reply_markup = keyboard)
+    await state.update_data(playing_now = 'O')
 
 
-@router.callback_query(StateFilter(Game.two_players_on_one_computer, Game.player_vs_player, Game.player_vs_computer), CellsCallbackFactory.filter())
+@router.callback_query(StateFilter(Game.two_players_on_one_computer, Game.player_vs_player, Game.player_vs_computer),
+                       CellsCallbackFactory.filter())
 async def game_process(cb: CallbackQuery,
                        state: FSMContext,
                        callback_data: CallbackData):
@@ -127,6 +129,7 @@ async def game_process(cb: CallbackQuery,
 
             keyboard = TTTKeyboard.create_simple_inline_keyboard(1, 'Вернуться')
             end_text = f'Игра закончена! {(winner != "Ничья") * "Победил "}{winner}!'
+            await asyncio.sleep(random.randint(1, 3))
             await ending_update(cb, cb.from_user.id, state, end_text, keyboard)
 
 
