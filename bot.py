@@ -6,7 +6,7 @@ from config.config import load_config, Config
 from handlers import core_handlers, other_handlers
 from states.states import storage
 from logs import log_config
-from middlewares.core_middlewares import CheckingMoves
+from middlewares.core_middlewares import CheckingMoves, DbMiddleware
 from menu.menu import set_menu
 
 
@@ -18,6 +18,7 @@ async def main():
     dp.include_router(core_handlers.router)
     dp.include_router(other_handlers.router)
     core_handlers.router.callback_query.middleware(CheckingMoves())
+    core_handlers.router.callback_query.middleware(DbMiddleware())
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)

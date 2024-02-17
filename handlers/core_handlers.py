@@ -8,7 +8,7 @@ from aiogram.types import Message, CallbackQuery
 from lexicon.lexicon import lexicon
 from keyboards.inline_keyboard import TTTKeyboard
 from filters.core_filters import CellsCallbackFactory, CallbackData
-from service.core_service import check_winner, initiate_both_users, Service, update_field_and_users_data, ending_update, computer_move
+from service.core_service import check_winner, initiate_both_users, Service, update_field_and_users_data, ending_update, computer_move, rating
 
 router = Router()
 
@@ -35,7 +35,7 @@ async def back(callback: CallbackQuery):
 
 @router.callback_query(F.data == 'Начать')
 async def begin(cb: CallbackQuery):
-    keyboard = TTTKeyboard.create_simple_inline_keyboard(1, 'Компьютер', 'Против другого игрока', 'На двоих')
+    keyboard = TTTKeyboard.create_simple_inline_keyboard(1, 'Компьютер', 'Игра против другого игрока', 'На двоих')
     await cb.message.edit_text(text = lexicon.mode, reply_markup = keyboard)
 
 
@@ -60,7 +60,7 @@ async def ending(cb: CallbackQuery,
     await state.set_state(Game.default)
 
 
-@router.message(StateFilter(Game.two_players_on_one_computer, Game.player_vs_player, Game.player_vs_computer), Command('cancel'))
+@router.message(Command('cancel'))
 async def cancel(cb: Message,
                  state: FSMContext):
     await state.set_state(Game.default)
@@ -69,7 +69,26 @@ async def cancel(cb: Message,
     await cb.bot.send_message(cb.from_user.id, lexicon.start, reply_markup = keyboard)
 
 
-@router.callback_query(F.data == 'Против другого игрока')
+@router.callback_query(F.data == 'Игра против другого игрока')
+async def online_menu(cb: CallbackQuery,
+                      state: FSMContext):
+    await cb.message.edit_text(text = lexicon.mode_rating,
+                               reply_markup = TTTKeyboard.create_simple_inline_keyboard(1, 'Поиск игроков', 'Рейтинг'))
+
+@router.callback_query(F.data == 'Рейтинг')
+async def rating_online(cb: CallbackQuery, state: FSMContext):
+    await cb.message.edit_text(text=await rating(cb, state),
+                               reply_markup = TTTKeyboard.create_simple_inline_keyboard(1, 'Назад к выбору игроков'),
+                               parse_mode = 'HTML')
+
+@router.callback_query(F.data == 'Назад к выбору игроков')
+async def some_back_rating(cb: CallbackQuery, state: FSMContext):
+    await cb.message.edit_text(text = lexicon.mode_rating,
+                               reply_markup = TTTKeyboard.create_simple_inline_keyboard(1, 'Поиск игроков', 'Рейтинг'))
+
+
+
+@router.callback_query(F.data == 'Поиск игроков')
 async def search_for_players(cb: CallbackQuery,
                              state: FSMContext):
     await state.set_state(Game.player_vs_player)
@@ -128,7 +147,7 @@ async def game_process(cb: CallbackQuery,
             keyboard = TTTKeyboard.create_simple_inline_keyboard(1, 'Вернуться')
             end_text = f'Игра закончена! {(winner != "Ничья") * "Победил "}{winner}!'
             await asyncio.sleep(random.randint(1, 3))
-            await ending_update(cb, cb.from_user.id, state, end_text, keyboard)
+            await ending_update(cb, cb.from_user.id, state, end_text, keyboard, cb.from_user.id)
 
 
 

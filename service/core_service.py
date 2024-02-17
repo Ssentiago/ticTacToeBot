@@ -9,6 +9,9 @@ from handlers.core_handlers import Game
 from lexicon.lexicon import lexicon
 from random import choice
 from dataclasses import dataclass
+from database.database import Database
+
+db = Database()
 
 
 @dataclass
@@ -129,7 +132,8 @@ async def ending_update(user_cb: CallbackQuery,
                         user_id: int,
                         user_state: FSMContext,
                         text: str,
-                        keyboard: InlineKeyboardMarkup):
+                        keyboard: InlineKeyboardMarkup,
+                        winner: int):
     raw_state = await user_state.get_state()
     await user_cb.message.edit_text(text = text,
                                     reply_markup = keyboard)
@@ -143,6 +147,7 @@ async def ending_update(user_cb: CallbackQuery,
                                             message_id = msg_id,
                                             reply_markup = keyboard)
         await other_user_state.set_state(Game.end_of_game)
+        await db.increment_wins(winner)
 
 
 async def computer_move(cb: CallbackQuery | list[list[str]],
@@ -173,3 +178,10 @@ async def computer_make_move(cb: CallbackQuery, state: FSMContext) -> None:
     cb.message.reply_markup.inline_keyboard[x][y] = comp_sign
     await cb.message.edit_text(text = lexicon.game_process(Service.signs[comp_sign], Service.signs[next_sign]),
                                reply_markup = cb.message.reply_markup)
+
+
+async def rating(cb: CallbackQuery, state: FSMContext) -> None:
+    user_id = cb.from_user.id
+    raw_data = await db.get_values(cb.from_user.id)
+    user_rate, all = raw_data['user_data'], raw_data['all']
+    return lexicon.rating(user_rate, all)

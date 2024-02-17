@@ -5,6 +5,9 @@ from states.states import Game, FSMContext
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 from aiogram.types import CallbackQuery
+from database.database import Database
+
+db = Database()
 
 
 class CheckingMoves(BaseMiddleware):
@@ -36,3 +39,16 @@ class CheckingMoves(BaseMiddleware):
 
         else:
             return await handler(event, data)
+
+
+class DbMiddleware(BaseMiddleware):
+    async def __call__(self,
+                       handler: Callable[TelegramObject: Dict[str, Any], Awaitable[Any]],
+                       event: CallbackQuery,
+                       data: Dict[str, Any]):
+        if event.data == 'Игра против другого игрока':
+            await db.initiate_user(event.from_user.id, event.from_user.full_name)
+
+
+
+        await handler(event, data)
