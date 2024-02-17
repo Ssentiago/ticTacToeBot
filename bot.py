@@ -2,12 +2,18 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
+from aiogram.filters import ExceptionTypeFilter
+from aiogram_dialog import setup_dialogs
+from aiogram_dialog.api.exceptions import UnknownState
+
+from Dialog.dialog import main_menu
 from config.config import load_config, Config
 from handlers import core_handlers, other_handlers
-from states.states import storage
+# from states.states import storage
 from logs import log_config
 from middlewares.core_middlewares import CheckingMoves
 from menu.menu import set_menu
+from states.states import storage
 
 
 async def main():
@@ -17,8 +23,9 @@ async def main():
     dp.startup.register(set_menu)
     dp.include_router(core_handlers.router)
     dp.include_router(other_handlers.router)
+    dp.include_router(main_menu)
+    setup_dialogs(dp)
     core_handlers.router.callback_query.middleware(CheckingMoves())
-
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 

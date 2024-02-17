@@ -2,7 +2,6 @@ from aiogram.types import CallbackQuery
 from handlers.core_handlers import FSMContext, TTTKeyboard
 from handlers.core_handlers import lexicon
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from handlers.core_handlers import Game
 from lexicon.lexicon import lexicon
 from random import choice
 
@@ -157,3 +156,5 @@ async def computer_make_move(cb: CallbackQuery, state: FSMContext) -> None:
     cb.message.reply_markup.inline_keyboard[x][y] = comp_sign
     await cb.message.edit_text(text=lexicon.game_process(Service.signs[comp_sign], Service.signs[next_sign]),
                                reply_markup=cb.message.reply_markup)
+
+
