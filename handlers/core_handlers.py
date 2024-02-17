@@ -1,4 +1,5 @@
 import asyncio
+from pprint import pprint
 
 from aiogram.filters import CommandStart, Command
 from aiogram import F, Router
@@ -22,6 +23,7 @@ async def start(message: Message, dialog_manager: DialogManager):
 
 async def on_click(cb: CallbackQuery, button: Button, manager: DialogManager):
     x, y = map(int, cb.data.split('_'))
+
 
 
 # @router.message(StateFilter(Game.two_players_on_one_computer, Game.player_vs_player, Game.player_vs_computer), Command('cancel'))
