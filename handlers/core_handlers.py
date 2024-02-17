@@ -35,11 +35,11 @@ async def back(callback: CallbackQuery):
 
 @router.callback_query(F.data == 'Начать')
 async def begin(cb: CallbackQuery):
-    keyboard = TTTKeyboard.create_simple_inline_keyboard(1, 'Один игрок: компьютер', 'Один игрок: другой игрок', 'Два игрока')
+    keyboard = TTTKeyboard.create_simple_inline_keyboard(1, 'Компьютер', 'Против другого игрока', 'На двоих')
     await cb.message.edit_text(text = lexicon.mode, reply_markup = keyboard)
 
 
-@router.callback_query(F.data == 'Два игрока')
+@router.callback_query(F.data == 'На двоих')
 async def two_players(cb: CallbackQuery,
                       state: FSMContext):
     await state.set_state(Game.two_players_on_one_computer)
@@ -69,7 +69,7 @@ async def cancel(cb: Message,
     await cb.bot.send_message(cb.from_user.id, lexicon.start, reply_markup = keyboard)
 
 
-@router.callback_query(F.data == 'Один игрок: другой игрок')
+@router.callback_query(F.data == 'Против другого игрока')
 async def search_for_players(cb: CallbackQuery,
                              state: FSMContext):
     await state.set_state(Game.player_vs_player)
@@ -82,14 +82,12 @@ async def search_for_players(cb: CallbackQuery,
         Service.game_pool['pool'].setdefault(user_id, state)
 
 
-@router.callback_query(F.data == 'Один игрок: компьютер')
+@router.callback_query(F.data == 'Компьютер')
 async def computer(cb: CallbackQuery,
                    state: FSMContext):
-    # signs = {'✕', 'O'}
-    # comp_sign = signs.pop()
-    # user_sign = signs.pop()
-    comp_sign = '✕'
-    user_sign = 'O'
+    signs = {'✕', 'O'}
+    comp_sign = signs.pop()
+    user_sign = signs.pop()
     await state.set_state(Game.player_vs_computer)
     await state.update_data(sign = user_sign, computer_sign = comp_sign, playing_now = '✕')
     keyboard = TTTKeyboard.create_game_field(3)
