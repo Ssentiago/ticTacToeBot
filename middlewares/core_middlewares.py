@@ -7,6 +7,7 @@ from database.database import Database
 
 db = Database()
 
+
 class CheckingMoves(BaseMiddleware):
     async def __call__(self,
                        handler: Callable[TelegramObject: Dict[str, Any], Awaitable[Any]],
@@ -25,8 +26,6 @@ class CheckingMoves(BaseMiddleware):
             if state == Game.player_vs_computer.state:
 
                 if user_data['playing_now'] == user_data['sign']:
-                    print(data['callback_data'])
-                    print(user_data['sign'])
                     await handler(event, data)
                 else:
                     await event.answer()

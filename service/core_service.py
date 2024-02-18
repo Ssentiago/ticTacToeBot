@@ -6,7 +6,7 @@ from handlers.core_handlers import FSMContext, TTTKeyboard, lexicon, Game
 from bot import db
 from service.other_service import Cell, Service
 
-
+# получаем выигрышные линии - горизонтали, вертикали и диагонали для удобной с ними работы
 async def get_winner_lines(cb: CallbackQuery):
     kb = [list(map(lambda x: x.text, row)) for row in cb.message.reply_markup.inline_keyboard]
     for ind, row in enumerate(kb):
@@ -24,7 +24,8 @@ async def get_winner_lines(cb: CallbackQuery):
     res.extend(diag)
     return res
 
-
+# проверяем что хотя бы на одной из выигрышных линий есть символы одного из игроков
+# если ни на одной линии нет пустой клетки - то ничья
 async def check_winner(cb: CallbackQuery, winner = None):
     lines = [[elem.text for elem in row] for row in (await get_winner_lines(cb))]
     winner = winner is None and any(x.count('✕') == 3 for x in lines) and '✕' or winner
@@ -32,7 +33,7 @@ async def check_winner(cb: CallbackQuery, winner = None):
     winner = winner is None and all(x.count('◻️') == 0 for x in lines) and 'Ничья' or winner
     return winner
 
-
+# инициация пользователей в онлайн-режиме
 async def initiation_of_both_users(id1: int,
                                    id2: int,
                                    state1: FSMContext,
@@ -50,7 +51,7 @@ async def initiation_of_both_users(id1: int,
 
     Service.game_pool['pairs'].add((id1, state1, id2, state2))
 
-
+# вытаскиваем данные о другом пользователе из пары и из его состояния
 async def get_other_user_data(pair: tuple[int, FSMContext, int, FSMContext], user_id) -> tuple[int, int, FSMContext]:
     other_user_ind = pair.index(user_id) == 0 and 2 or 0
     other_user_id = pair[other_user_ind]
@@ -59,13 +60,13 @@ async def get_other_user_data(pair: tuple[int, FSMContext, int, FSMContext], use
     msg_id = other_user_data['msg_id']
     return other_user_id, msg_id, other_user_state
 
-
 async def get_the_pair(pool: dict, id: int):
     for pair in pool['pairs']:
         if id in pair:
             return pair
 
 
+# обновляем игровое поле и данные игроков
 async def update_field_and_users_data(sign: str,
                                       x: int,
                                       y: int,
@@ -99,7 +100,7 @@ async def update_field_and_users_data(sign: str,
         await user_state.update_data(playing_now = next_sign)
         await other_user_state.update_data(playing_now = next_sign)
 
-
+# обновляем игровое поле и данные игроков в конце партии
 async def ending_update(user_cb: CallbackQuery,
                         user_id: int,
                         user_state: FSMContext,
@@ -130,24 +131,34 @@ async def ending_update(user_cb: CallbackQuery,
                 await db.increment_wins(user_id)
 
 
+async def get_empty_cell(line: list[Cell]) -> tuple[int, int]:
+    for cell in line:
+        if cell.text == '◻️':
+            return cell.x, cell.y
+
+# непосредственно логика алгоритма хода компьютера
 async def computer_move(cb: CallbackQuery,
                         state: FSMContext) -> tuple[int, int]:
-    lines: list[list] = await get_winner_lines(cb)
+    lines: list[list[Cell]] = await get_winner_lines(cb)
 
     user_data = await state.get_data()
     user_sign = user_data['sign']
     comp_sign = user_data['computer_sign']
 
-    interesting_lines = filter(lambda line:
-                               [x.text for x in line[1]].count(user_sign) > 0 and [x.text for x in line[1]].count('◻️') > 0,
-                               enumerate(lines))
-    very_very_interesting_line = max(interesting_lines, key = lambda x: [x.text for x in x[1]].count(user_sign), default = None)
-    if very_very_interesting_line:
-        for ind, cell in enumerate(very_very_interesting_line[1]):
-            if cell.text == '◻️':
-                return cell.x, cell.y
+    computer_potential_winning_lines = list(filter(lambda line:
+                                                   [x.text for x in line].count(comp_sign) == 2, lines))
+    if computer_potential_winning_lines:
+        line = computer_potential_winning_lines[0]
+        return await get_empty_cell(line)
 
+    user_potential_winning_lines = filter(lambda line:
+                                          [x.text for x in line[1]].count(user_sign) > 0 and [x.text for x in line[1]].count('◻️') > 0,
+                                          enumerate(lines))
+    max_potential_line = max(user_potential_winning_lines, key = lambda x: [x.text for x in x[1]].count(user_sign), default = None)
+    if max_potential_line:
+        return await get_empty_cell(max_potential_line[1])
 
+# ход компьютера
 async def computer_make_move(cb: CallbackQuery, state: FSMContext) -> None:
     move = await computer_move(cb, state)
     if move:
@@ -162,16 +173,17 @@ async def computer_make_move(cb: CallbackQuery, state: FSMContext) -> None:
     else:
         await cb.answer()
 
-
+# получение данных о рейтинге пользователей
 async def rating(cb: CallbackQuery, state: FSMContext) -> None:
     user_id = cb.from_user.id
     raw_data = await db.get_values(cb.from_user.id)
     user_rate, all = raw_data['user_data'], raw_data['all']
     return lexicon.rating(user_rate, all)
 
+# удаление пользователей из поиска в том случае если они вышли из него при помощи /cancel
 async def remove_user_from_search(id: int, state: FSMContext) -> None:
     raw_state = await state.get_state()
     Service.game_pool['pool'].pop(int, None)
     if raw_state == Game.player_vs_player:
-        pair = await get_the_pair(Service.game_pool, cb.from_user.id)
+        pair = await get_the_pair(Service.game_pool, id)
         Service.game_pool['pairs'].discard(pair)
