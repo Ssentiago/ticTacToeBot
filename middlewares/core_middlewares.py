@@ -1,5 +1,4 @@
 from typing import Awaitable, Callable, Dict, Any
-
 from service.core_service import computer_make_move
 from states.states import Game, FSMContext
 from aiogram import BaseMiddleware
@@ -32,7 +31,11 @@ class CheckingMoves(BaseMiddleware):
 
                 # если пользователь имеет право сейчас ходить, то отправляем его на обработку, если нет - шлём об этом уведомление
                 if user_sign == user_data['playing_now']:
-                    return await handler(event, data)
+                    winner = user_data['winner']
+                    if not winner:
+                        return await handler(event, data)
+                    else:
+                        await event.answer('Подождите...')
                 else:
                     await event.answer('Сейчас не ваш ход!')
 
@@ -48,7 +51,5 @@ class DBMiddleware(BaseMiddleware):
                        data: Dict[str, Any]):
         if event.data == 'Игра против другого игрока':
             await db.initiate_user(event.from_user.id, event.from_user.full_name)
-
-
 
         await handler(event, data)

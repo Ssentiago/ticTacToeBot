@@ -8,7 +8,8 @@ from aiogram.types import Message, CallbackQuery
 from lexicon.lexicon import lexicon
 from keyboards.inline_keyboard import TTTKeyboard
 from filters.core_filters import CellsCallbackFactory, CallbackData
-from service.core_service import check_winner, initiate_both_users, Service, update_field_and_users_data, ending_update, computer_move, rating
+from service.core_service import check_winner, initiate_both_users, Service, update_field_and_users_data, ending_update, computer_move, \
+    rating
 
 router = Router()
 
@@ -73,19 +74,27 @@ async def cancel(cb: Message,
 async def online_menu(cb: CallbackQuery,
                       state: FSMContext):
     await cb.message.edit_text(text = lexicon.mode_rating,
-                               reply_markup = TTTKeyboard.create_simple_inline_keyboard(1, 'Поиск игроков', 'Рейтинг'))
+                               reply_markup = TTTKeyboard.create_simple_inline_keyboard(1, 'Поиск игроков', 'Рейтинг',
+                                                                                        'Назад к выбору режима'))
+
 
 @router.callback_query(F.data == 'Рейтинг')
 async def rating_online(cb: CallbackQuery, state: FSMContext):
-    await cb.message.edit_text(text=await rating(cb, state),
+    await cb.message.edit_text(text = await rating(cb, state),
                                reply_markup = TTTKeyboard.create_simple_inline_keyboard(1, 'Назад к выбору игроков'),
                                parse_mode = 'HTML')
+
+
+@router.callback_query(F.data == 'Назад к выбору режима')
+async def back_to_mode(cb: CallbackQuery, state: FSMContext):
+    keyboard = TTTKeyboard.create_simple_inline_keyboard(1, 'Компьютер', 'Игра против другого игрока', 'На двоих')
+    await cb.message.edit_text(text = lexicon.mode, reply_markup = keyboard)
+
 
 @router.callback_query(F.data == 'Назад к выбору игроков')
 async def some_back_rating(cb: CallbackQuery, state: FSMContext):
     await cb.message.edit_text(text = lexicon.mode_rating,
                                reply_markup = TTTKeyboard.create_simple_inline_keyboard(1, 'Поиск игроков', 'Рейтинг'))
-
 
 
 @router.callback_query(F.data == 'Поиск игроков')
@@ -140,12 +149,14 @@ async def game_process(cb: CallbackQuery,
                                           state,
                                           cb.from_user.id)
         winner = await check_winner(cb)
+        await state.update_data(winner = winner)
         if winner is not None:
             if winner in '✕O':
                 winner = Service.signs[winner]
 
             keyboard = TTTKeyboard.create_simple_inline_keyboard(1, 'Вернуться')
             end_text = f'Игра закончена! {(winner != "Ничья") * "Победил "}{winner}!'
+            await update_field_and_users_data(None, None, None, None, None, state, cb.from_user.id, winner)
             await asyncio.sleep(random.randint(1, 3))
             await ending_update(cb, cb.from_user.id, state, end_text, keyboard, cb.from_user.id)
 
