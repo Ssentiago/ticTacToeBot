@@ -99,12 +99,14 @@ async def update_field_and_users_data(sign: str,
                                       winner = None
                                       ):
     if winner:
-        pair = await get_the_pair(Service.game_pool, user_id)
-        print(pair)
-        _, _, other_user_state = await get_other_user_data(pair, user_id)
-        print(winner, 'coreservice')
-        await user_state.update_data(winner = winner)
-        await other_user_state.update_data(winner = winner)
+        raw_user_state = await user_state.get_state()
+        if raw_user_state == Game.player_vs_player.state:
+            pair = await get_the_pair(Service.game_pool, user_id)
+            print(pair)
+            _, _, other_user_state = await get_other_user_data(pair, user_id)
+            print(winner, 'coreservice')
+            await user_state.update_data(winner = winner)
+            await other_user_state.update_data(winner = winner)
         return
 
     raw_user_state = await user_state.get_state()
