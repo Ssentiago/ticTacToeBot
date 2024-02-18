@@ -41,7 +41,7 @@ class CheckingMoves(BaseMiddleware):
             return await handler(event, data)
 
 
-class DbMiddleware(BaseMiddleware):
+class DBMiddleware(BaseMiddleware):
     async def __call__(self,
                        handler: Callable[TelegramObject: Dict[str, Any], Awaitable[Any]],
                        event: CallbackQuery,

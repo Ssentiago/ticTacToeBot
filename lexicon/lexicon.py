@@ -34,7 +34,7 @@ class lexicon:
     @classmethod
     def rating(cls, user_rate, last_ten_rates):
         raw_data = '\n'.join(f'{x[1]}: {x[2]} побед' for x in last_ten_rates)
-        return f'''Ваш личный рейтинг: {user_rate}
+        return f'''<b>Ваш личный рейтинг</b>: {user_rate}
         
 <b>Топ 10 игроков</b>:
 {raw_data}    
