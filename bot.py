@@ -8,7 +8,9 @@ from states.states import storage
 from logs import log_config
 from middlewares.core_middlewares import CheckingMoves, DBMiddleware
 from menu.menu import set_menu
+from database.database import Database
 
+db = Database()
 
 async def main():
     config: Config = load_config()

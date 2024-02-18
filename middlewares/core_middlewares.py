@@ -1,5 +1,4 @@
 from typing import Awaitable, Callable, Dict, Any
-from service.core_service import computer_make_move
 from states.states import Game, FSMContext
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
@@ -7,7 +6,6 @@ from aiogram.types import CallbackQuery
 from database.database import Database
 
 db = Database()
-
 
 class CheckingMoves(BaseMiddleware):
     async def __call__(self,
@@ -22,8 +20,13 @@ class CheckingMoves(BaseMiddleware):
 
         if 'callback_data' in data:
             # если пользователь играет сам с собой, то обрабатываем как обычно
-            if state in (Game.player_vs_computer.state, Game.two_players_on_one_computer.state):
+            if state == Game.two_players_on_one_computer.state:
                 return await handler(event, data)
+            if state == Game.player_vs_computer.state:
+                if user_data['playing_now'] == user_data['sign']:
+                    await handler(event, data)
+                else:
+                    await event.answer()
 
             # проверяем, что пользователь играет против другого игрока
             if state == Game.player_vs_player.state:
@@ -38,7 +41,8 @@ class CheckingMoves(BaseMiddleware):
                         await event.answer('Подождите...')
                 else:
                     await event.answer('Сейчас не ваш ход!')
-
+            else:
+                await event.answer()
 
         else:
             return await handler(event, data)

@@ -8,8 +8,8 @@ from aiogram.types import Message, CallbackQuery
 from lexicon.lexicon import lexicon
 from keyboards.inline_keyboard import TTTKeyboard
 from filters.core_filters import CellsCallbackFactory, CallbackData
-from service.core_service import check_winner, initiate_both_users, Service, update_field_and_users_data, ending_update, computer_move, \
-    rating
+from service.core_service import (check_winner, initiation_of_both_users, Service, update_field_and_users_data,
+                                  ending_update, computer_make_move, rating)
 
 router = Router()
 
@@ -44,11 +44,8 @@ async def begin(cb: CallbackQuery):
 async def two_players(cb: CallbackQuery,
                       state: FSMContext):
     await state.set_state(Game.two_players_on_one_computer)
-
     sign = '✕'
-
     await state.set_data({'winner': None, 'sign': sign})
-
     await cb.message.edit_text(text = f'Игра началась! Сейчас ходит - {Service.signs[sign]}',
                                reply_markup = TTTKeyboard.create_game_field(3))
 
@@ -105,20 +102,24 @@ async def search_for_players(cb: CallbackQuery,
     user_id = cb.from_user.id
     if Service.game_pool['pool']:
         other_user_id = Service.game_pool['pool'].popitem()
-        await initiate_both_users(user_id, other_user_id[0], state, other_user_id[1], cb.bot)
+        await initiation_of_both_users(user_id, other_user_id[0], state, other_user_id[1], cb.bot)
     else:
-        Service.game_pool['pool'].setdefault(user_id, state)
+        Service.game_pool['pool'][user_id] = state
+        # .setdefault(user_id, state))
 
 
 @router.callback_query(F.data == 'Компьютер')
 async def computer(cb: CallbackQuery,
                    state: FSMContext):
+    # случайно распределяем знаки
     signs = {'✕', 'O'}
     comp_sign = signs.pop()
     user_sign = signs.pop()
+    # устанавливаем пользователю статус и нужные данные
     await state.set_state(Game.player_vs_computer)
-    await state.update_data(sign = user_sign, computer_sign = comp_sign, playing_now = '✕')
+    await state.update_data(sign = user_sign, computer_sign = comp_sign, playing_now = '✕', winner = None)
     keyboard = TTTKeyboard.create_game_field(3)
+    # если компьютер ходит первым
     if comp_sign == '✕':
         await cb.message.edit_text(text = lexicon.game_start(Service.signs[user_sign]),
                                    reply_markup = keyboard)
@@ -128,10 +129,11 @@ async def computer(cb: CallbackQuery,
         await asyncio.sleep(random.randint(1, 3))
         await cb.message.edit_text(text = lexicon.game_process(Service.signs[comp_sign], Service.signs[user_sign]),
                                    reply_markup = keyboard)
+        await state.update_data(playing_now = 'O')
     else:
+        # первым ходит пользователь
         await cb.message.edit_text(text = lexicon.game_start(Service.signs[user_sign]),
                                    reply_markup = keyboard)
-    await state.update_data(playing_now = 'O')
 
 
 @router.callback_query(StateFilter(Game.two_players_on_one_computer, Game.player_vs_player, Game.player_vs_computer),
@@ -139,29 +141,31 @@ async def computer(cb: CallbackQuery,
 async def game_process(cb: CallbackQuery,
                        state: FSMContext,
                        callback_data: CallbackData):
+    # обрабатываем только ходы пользователей
+    # забираем координаты их кода
     x, y = callback_data.x, callback_data.y
     if cb.message.reply_markup.inline_keyboard[x][y].text == '◻️':
         data = await state.get_data()
-        await update_field_and_users_data(data['sign'],
-                                          x, y,
-                                          cb.message.reply_markup,
-                                          cb,
-                                          state,
-                                          cb.from_user.id)
-        winner = await check_winner(cb)
-        await state.update_data(winner = winner)
-        if winner is not None:
-            if winner in '✕O':
-                winner = Service.signs[winner]
-
-            keyboard = TTTKeyboard.create_simple_inline_keyboard(1, 'Вернуться')
-            end_text = f'Игра закончена! {(winner != "Ничья") * "Победил "}{winner}!'
-            await update_field_and_users_data(None, None, None, None, None, state, cb.from_user.id, winner)
-            await asyncio.sleep(random.randint(1, 3))
-            await ending_update(cb, cb.from_user.id, state, end_text, keyboard, cb.from_user.id)
-
-
-
-
+        winner = data['winner']
+        # если победитель всё ещё не определен
+        if not winner:
+            # обновляем поле
+            await update_field_and_users_data(data['sign'],
+                                              x, y,
+                                              cb.message.reply_markup,
+                                              cb,
+                                              state,
+                                              cb.from_user.id)
+            winner = await check_winner(cb)
+            await state.update_data(winner = winner)
+            # если победитель вдруг определился
+            if winner is not None:
+                if winner in '✕O':
+                    winner = Service.signs[winner]
+                keyboard = TTTKeyboard.create_simple_inline_keyboard(1, 'Вернуться')
+                end_text = f'Игра закончена! {(winner != "Ничья") * "Победил "}{winner}!'
+                await asyncio.sleep(random.randint(1, 3))
+                # обновляем данные поля итогом партии
+                await ending_update(cb, cb.from_user.id, state, end_text, keyboard, cb.from_user.id)
     else:
         await cb.answer('Нельзя пойти на эту клетку!')

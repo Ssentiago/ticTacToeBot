@@ -7,7 +7,6 @@ import os
 class Database:
     def __init__(self):
         path = os.path.join(os.path.dirname(__file__), 'database.db')
-        print(path, 'initiated')
         self.connect = sqlite3.connect(path)
         self.connect.execute('''CREATE TABLE IF NOT EXISTS scores(
         id INTEGER PRIMARY KEY,
@@ -19,7 +18,6 @@ class Database:
 
     async def connect_to_db(self):
         path = os.path.join(os.path.dirname(__file__), 'database.db')
-        print(path, 'connected')
         self.connect = await aiosqlite.connect(path)
 
     async def close_db(self):
@@ -44,7 +42,6 @@ class Database:
         await self.connect_to_db()
         check = await self.connect.execute('''SELECT * FROM scores WHERE id = ?''', (id,))
         check = await check.fetchone()
-
         if not check:
             await self.connect.execute('INSERT INTO scores VALUES(?, ?, ?)', (id, name, 0))
             await self.connect.commit()
