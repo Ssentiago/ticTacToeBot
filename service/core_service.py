@@ -120,7 +120,14 @@ async def ending_update(user_cb: CallbackQuery,
                                             message_id = msg_id,
                                             reply_markup = keyboard)
         await other_user_state.set_state(Game.end_of_game)
-        await db.increment_wins(winner)
+        await remove_user_from_search(user_id, user_state)
+
+        data = await user_state.get_data()
+        winner = data['winner']
+        user_sign = data['sign']
+        if winner != 'Ничья':
+            if winner == user_sign:
+                await db.increment_wins(user_id)
 
 
 async def computer_move(cb: CallbackQuery,
@@ -161,3 +168,10 @@ async def rating(cb: CallbackQuery, state: FSMContext) -> None:
     raw_data = await db.get_values(cb.from_user.id)
     user_rate, all = raw_data['user_data'], raw_data['all']
     return lexicon.rating(user_rate, all)
+
+async def remove_user_from_search(id: int, state: FSMContext) -> None:
+    raw_state = await state.get_state()
+    Service.game_pool['pool'].pop(int, None)
+    if raw_state == Game.player_vs_player:
+        pair = await get_the_pair(Service.game_pool, cb.from_user.id)
+        Service.game_pool['pairs'].discard(pair)

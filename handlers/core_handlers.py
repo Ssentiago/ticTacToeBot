@@ -8,7 +8,8 @@ from aiogram.types import Message, CallbackQuery
 from lexicon.lexicon import lexicon
 from keyboards.inline_keyboard import TTTKeyboard
 from filters.core_filters import CellsCallbackFactory, CallbackData
-from service.core_service import (check_winner, initiation_of_both_users, Service, update_field_and_users_data,
+from service.core_service import (check_winner, get_the_pair, initiation_of_both_users, Service, remove_user_from_search,
+                                  update_field_and_users_data,
                                   ending_update, computer_make_move, rating)
 
 router = Router()
@@ -61,6 +62,7 @@ async def ending(cb: CallbackQuery,
 @router.message(Command('cancel'))
 async def cancel(cb: Message,
                  state: FSMContext):
+    await remove_user_from_search(cb.from_user.id, state)
     await state.set_state(Game.default)
     keyboard = TTTKeyboard.create_simple_inline_keyboard(2, 'Начать', 'Правила')
     await cb.bot.send_message(cb.from_user.id, lexicon.cancel)
@@ -112,8 +114,9 @@ async def search_for_players(cb: CallbackQuery,
 async def computer(cb: CallbackQuery,
                    state: FSMContext):
     # случайно распределяем знаки
-    signs = {'✕', 'O'}
-    comp_sign = signs.pop()
+    signs = ['✕', 'O']
+    comp_sign = random.choice(signs)
+    signs.remove(comp_sign)
     user_sign = signs.pop()
     # устанавливаем пользователю статус и нужные данные
     await state.set_state(Game.player_vs_computer)
