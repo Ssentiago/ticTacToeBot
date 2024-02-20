@@ -4,9 +4,10 @@ import random
 from aiogram.filters import CommandStart, Command
 from aiogram import F, Router
 
+from service.core import ending_update, update_field_and_users_data
 from service.game_logic import check_winner
 from service.online_mode import initiation_of_both_users, rating, remove_user_from_search
-from service.service import Service, ending_update, update_field_and_users_data
+from service.other import Service
 from states.states import Game, StateFilter, FSMContext
 from aiogram.types import Message, CallbackQuery
 from lexicon.lexicon import lexicon
@@ -93,7 +94,7 @@ async def back_to_mode(cb: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == 'Назад к выбору игроков')
 async def some_back_rating(cb: CallbackQuery, state: FSMContext):
     await cb.message.edit_text(text = lexicon.mode_rating,
-                               reply_markup = TTTKeyboard.create_simple_inline_keyboard(1, 'Поиск игроков', 'Рейтинг'))
+                               reply_markup = TTTKeyboard.create_simple_inline_keyboard(1, 'Поиск игроков', 'Рейтинг', 'Назад к выбору режима'))
 
 
 @router.callback_query(F.data == 'Поиск игроков')
@@ -113,12 +114,10 @@ async def search_for_players(cb: CallbackQuery,
 async def computer(cb: CallbackQuery,
                    state: FSMContext):
     # случайно распределяем знаки
-    # signs = ['✕', 'O']
-    # comp_sign = random.choice(signs)
-    # signs.remove(comp_sign)
-    # user_sign = signs.pop()
-    user_sign = '✕'
-    comp_sign = 'O'
+    signs = ['✕', 'O']
+    comp_sign = random.choice(signs)
+    signs.remove(comp_sign)
+    user_sign = signs.pop()
     # устанавливаем пользователю статус и нужные данные
     await state.set_state(Game.player_vs_computer)
     await state.update_data(sign = user_sign, computer_sign = comp_sign, playing_now = '✕', winner = None)

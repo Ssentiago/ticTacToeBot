@@ -3,7 +3,7 @@ import logging
 
 from aiogram import Bot, Dispatcher
 from config.config import load_config, Config
-from handlers import core_handlers, other_handlers
+from handlers import core_handlers
 from states.states import storage
 from logs import log_config
 from middlewares.core_middlewares import CheckingMoves, DBMiddleware
@@ -18,7 +18,6 @@ async def main():
     dp = Dispatcher(storage=storage)
     dp.startup.register(set_menu)
     dp.include_router(core_handlers.router)
-    dp.include_router(other_handlers.router)
     core_handlers.router.callback_query.middleware(CheckingMoves())
     core_handlers.router.callback_query.middleware(DBMiddleware())
 

@@ -1,7 +1,6 @@
-# получаем выигрышные линии - горизонтали, вертикали и диагонали для удобной с ними работы
 from aiogram.types import CallbackQuery
 
-from service.service import Cell
+from service.other import Cell
 
 
 async def get_winner_lines(cb: CallbackQuery):

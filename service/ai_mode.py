@@ -1,18 +1,12 @@
 import asyncio
-from random import random
+import random
 
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
-
 from lexicon.lexicon import lexicon
+from service.other import Service
 from service.game_logic import get_winner_lines
-from service.service import Cell, Service
-
-
-async def get_empty_cell(line: list[Cell]) -> tuple[int, int]:
-    for cell in line:
-        if cell.text == '◻️':
-            return cell.x, cell.y
+from service.other import Cell, get_empty_cell
 
 
 # непосредственно логика алгоритма хода компьютера

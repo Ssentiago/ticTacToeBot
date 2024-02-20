@@ -5,7 +5,7 @@ from aiogram.types import CallbackQuery
 from database.database import Database
 from keyboards.inline_keyboard import TTTKeyboard
 from lexicon.lexicon import lexicon
-from service.service import Service
+from service.other import Service
 from states.states import Game
 
 db = Database()

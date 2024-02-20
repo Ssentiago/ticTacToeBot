@@ -1,11 +1,13 @@
+from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup
 
-
 from bot import db
-from handlers.core_handlers import FSMContext, Game, lexicon
+from lexicon.lexicon import lexicon
 from service.ai_mode import computer_make_move
 from service.game_logic import check_winner
-from service.online_mode import get_the_pair, remove_user_from_search
+from service.online_mode import get_other_user_data, get_the_pair, remove_user_from_search
+from service.other import Service
+from states.states import Game
 
 
 # обновляем игровое поле и данные игроков
@@ -76,16 +78,3 @@ async def ending_update(user_cb: CallbackQuery,
                 await db.increment_wins(user_id)
 
 
-from dataclasses import dataclass
-
-
-@dataclass
-class Cell:
-    x: int
-    y: int
-    text: str
-
-
-class Service:
-    signs = {'✕': 'Крестик', 'O': 'Нолик'}
-    game_pool = {'pool': {}, 'pairs': set()}
