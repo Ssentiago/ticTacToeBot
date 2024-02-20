@@ -185,7 +185,8 @@ async def rating(cb: CallbackQuery, state: FSMContext) -> None:
 # удаление пользователей из поиска в том случае если они вышли из него при помощи /cancel
 async def remove_user_from_search(id: int, state: FSMContext) -> None:
     raw_state = await state.get_state()
-    Service.game_pool['pool'].pop(int, None)
+    x = Service.game_pool['pool'].pop(id, None)
+    print(x)
     if raw_state == Game.player_vs_player:
         pair = await get_the_pair(Service.game_pool, id)
         Service.game_pool['pairs'].discard(pair)
