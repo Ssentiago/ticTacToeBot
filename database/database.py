@@ -15,7 +15,6 @@ class Database:
         self.connect.commit()
         self.connect.close()
 
-
     async def connect_to_db(self):
         path = os.path.join(os.path.dirname(__file__), 'database.db')
         self.connect = await aiosqlite.connect(path)

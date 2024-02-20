@@ -114,10 +114,12 @@ async def search_for_players(cb: CallbackQuery,
 async def computer(cb: CallbackQuery,
                    state: FSMContext):
     # случайно распределяем знаки
-    signs = ['✕', 'O']
-    comp_sign = random.choice(signs)
-    signs.remove(comp_sign)
-    user_sign = signs.pop()
+    # signs = ['✕', 'O']
+    # comp_sign = random.choice(signs)
+    # signs.remove(comp_sign)
+    # user_sign = signs.pop()
+    user_sign = '✕'
+    comp_sign = 'O'
     # устанавливаем пользователю статус и нужные данные
     await state.set_state(Game.player_vs_computer)
     await state.update_data(sign = user_sign, computer_sign = comp_sign, playing_now = '✕', winner = None)

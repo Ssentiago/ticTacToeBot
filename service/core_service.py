@@ -86,9 +86,11 @@ async def update_field_and_users_data(sign: str,
         await user_state.update_data(sign = next_sign)
 
     elif raw_user_state == Game.player_vs_computer.state:
-        await user_state.update_data(playing_now = next_sign)
-        await computer_make_move(user_cb, user_state)
-        await user_state.update_data(playing_now = sign)
+        winner = await check_winner(user_cb)
+        if winner is None:
+            await user_state.update_data(playing_now = next_sign)
+            await computer_make_move(user_cb, user_state)
+            await user_state.update_data(playing_now = sign)
 
     elif raw_user_state == Game.player_vs_player.state:
         pair = await get_the_pair(Service.game_pool, user_id)
