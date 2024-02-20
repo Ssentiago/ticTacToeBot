@@ -3,15 +3,15 @@ import random
 
 from aiogram.filters import CommandStart, Command
 from aiogram import F, Router
+
+from service.game_logic import check_winner
+from service.online_mode import initiation_of_both_users, rating, remove_user_from_search
+from service.service import Service, ending_update, update_field_and_users_data
 from states.states import Game, StateFilter, FSMContext
 from aiogram.types import Message, CallbackQuery
 from lexicon.lexicon import lexicon
 from keyboards.inline_keyboard import TTTKeyboard
 from filters.core_filters import CellsCallbackFactory, CallbackData
-from service.core_service import (check_winner, get_the_pair, initiation_of_both_users, Service, remove_user_from_search,
-                                  update_field_and_users_data,
-                                  ending_update, computer_make_move, rating)
-
 router = Router()
 
 
@@ -107,7 +107,6 @@ async def search_for_players(cb: CallbackQuery,
         await initiation_of_both_users(user_id, other_user_id[0], state, other_user_id[1], cb.bot)
     else:
         Service.game_pool['pool'][user_id] = state
-        # .setdefault(user_id, state))
 
 
 @router.callback_query(F.data == 'Компьютер')
