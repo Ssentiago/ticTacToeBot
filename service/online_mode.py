@@ -1,4 +1,6 @@
 # инициация пользователей в онлайн-режиме
+import random
+
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
@@ -14,9 +16,10 @@ async def initiation_of_both_users(id1: int,
                                    id2: int,
                                    state1: FSMContext,
                                    state2: FSMContext, bot):
-    signs = {'✕', 'O'}
+    signs = ['✕', 'O']
     keyboard = TTTKeyboard.create_game_field(3)
-    sign1 = signs.pop()
+    sign1 = random.choice(signs)
+    signs.remove(sign1)
     sign2 = signs.pop()
 
     msg1 = await bot.send_message(id1, lexicon.game_start(Service.signs[sign1]), reply_markup = keyboard)
